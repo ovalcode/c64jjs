@@ -54,6 +54,61 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 	public VICII(Machine machine, ColorRAM colorRAM) {
 		this.colorRAM = colorRAM;
 		this.machine = machine;
+		try {
+			FileInputStream fis = new FileInputStream("/home/johan/dumpcolorram.bin");
+			try {
+				fis.read(colorRAM.colorRAM);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		mem[0] = (byte)0x96; 
+    	mem[1] = (byte)0xA0; 
+    	mem[2] = (byte)0x96; 
+    	mem[3] = (byte)0xB5; 
+    	mem[4] = (byte)0x96; 
+    	mem[5] = (byte)0xA1; 
+    	mem[6] = (byte)0x96; 
+    	mem[7] = (byte)0xB5; 
+    	mem[8] = (byte)0x96; 
+    	mem[9] = (byte)0xB5; 
+    	mem[10] = 0x00; 
+    	mem[11] = 0x76; 
+    	mem[12] = 0x07; 
+    	mem[13] = 0x00; 
+    	mem[14] = 0x07; 
+    	mem[15] = 0x15; 
+    	mem[16] = 0x00; 
+    	mem[17] = 0x1B; 
+    	mem[18] = 0x00; 
+    	mem[19] = 0x00; 
+    	mem[20] = 0x00; 
+    	mem[21] = 0x1F; 
+    	mem[22] = 0x18; 
+    	mem[23] = 0x04; 
+    	mem[24] = 0x12; //1a 12
+    	mem[25] = 0x00; 
+    	mem[26] = (byte)0xF1; 
+    	mem[27] = (byte)0xFF; 
+    	mem[28] = (byte)0xE3; 
+    	mem[29] = 0x00; 
+    	mem[30] = 0x00; 
+    	mem[31] = (byte)0x00 ;
+    	mem[32] = (byte)0x01; 
+    	mem[33] = 0x00; 
+    	mem[34] = 0x0B; 
+    	mem[35] = 0x0E; 
+    	mem[36] = 0x03; 
+    	mem[37] = 0x05; 
+    	mem[38] = 0x08; 
+    	mem[39] = 0x0D; 
+    	mem[40] = 0x0D; 
+    	mem[41] = 0x00; 
+    	mem[42] = (byte)0x01  ;
 
 	}
 
@@ -281,12 +336,12 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 	public int[] getFrame() {
 		long beginCycle = 0;
 		long endCycle = 0;
-		while (endCycle < (312 * 63)) {
-			beginCycle = endCycle;
-			machine.stepCPU();
+		//while (endCycle < (312 * 63)) {
+			//beginCycle = endCycle;
+			//machine.stepCPU();
 			endCycle = machine.getCycles() - lastFrameCycle;
 			endCycle = Math.min(endCycle, 312 * 63);
-			for (currentFrameCycle = beginCycle; currentFrameCycle < endCycle; currentFrameCycle++) {
+			for (currentFrameCycle = 0; currentFrameCycle < 312 * 63; currentFrameCycle++) {
 				int row = (int) (currentFrameCycle / 63);
 				int col = (int) (currentFrameCycle - row * 63);
 				if ((mem[26] & 1) == 1) {
@@ -295,7 +350,7 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 				}
 				processRowColumn(row, col);
 			}			 
-		}
+		//}
 		
 		lastFrameCycle = machine.getCycles();
         return pixels;

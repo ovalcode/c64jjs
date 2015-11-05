@@ -1,5 +1,8 @@
 package co.za.jjs;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -279,6 +282,13 @@ public class Machine {
 		keyboard.setReadPoint(cia1);
 		cia2 = new CIA(this);
 		memoryRegions.add(new IOMem(vicii, colorRAM, cia1, cia2));
+		try {
+			FileInputStream fis = new FileInputStream("/home/johan/dump.bin");
+			fis.read(mainMem);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		mainMem[1] = 7;
 		cpu = new Cpu(this);
 		
