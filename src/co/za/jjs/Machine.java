@@ -30,6 +30,7 @@ public class Machine {
 	private boolean playPressed = false;
 	private int joyBits = 0;
 	private int inputMode = 0;
+	private boolean startDumping = false;
 	
 	public void setPlayPressed(boolean playPressed) {
 		this.playPressed = playPressed;
@@ -52,6 +53,10 @@ public class Machine {
 	
 	public byte[] getDumpOfMainMem() {
 		return mainMem;
+	}
+	
+	public void setStartDumping(boolean startDumping) {
+		this.startDumping = startDumping;
 	}
 	
 	public byte[] getDumpOfScreenColor() {
@@ -191,6 +196,8 @@ public class Machine {
 			  }
 			  i++;
 		  }
+		  if (startDumping & (address < 10050))
+     		  System.out.println("Below Dan: " + address + "  " + num);
 		  mainMem[address] = num;
 		  
 		  if (address == 1) {

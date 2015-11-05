@@ -37,6 +37,7 @@ public class Board extends JPanel
     private ArrayList<Integer> keyList = new ArrayList<Integer>();
     private boolean playPressed = false;
     private boolean dumpAndExit = false;
+    private boolean startdumping = false;
 
     public Board() {
 
@@ -170,6 +171,9 @@ public class Board extends JPanel
         		
         		break;
         	}
+        	if (startdumping) {
+        		machine.setStartDumping(true);
+        	}
         	int w= star.getWidth(); 
         	int h= star.getHeight();
         	temp = temp % 3;
@@ -250,6 +254,11 @@ public class Board extends JPanel
               dumpAndExit = true;
               return;
         	}
+        	if (e.getKeyCode() == KeyEvent.VK_F11) {
+                startdumping = true;
+                return;
+          	}
+
         	if (e.getKeyCode() == 92) {
         		playPressed = true;
         		return;
