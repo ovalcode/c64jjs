@@ -204,10 +204,10 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 		spritePointerBase = spritePointerBase + 1024 - 8;
 		for (int i = 0; i < 8; i++) {
 			if (((1 << i) & mem[21]) == (1 << i)) {
-				int spriteFromX = mem[i << 2] & 0xff;
+				int spriteFromX = mem[i << 1] & 0xff;
 				if (((1 << i) & mem[16]) == (1 << i))
 					spriteFromX = spriteFromX + 256;
-				int spriteFromY = mem[(i << 2) + 1] & 0xff;
+				int spriteFromY = mem[(i << 1) + 1] & 0xff;
 				int spriteToX = spriteFromX + 24;
 				int spriteToY = spriteFromY + 21;
 				int spriteStartAddress = (machine.readVIC(spritePointerBase + i) & 0xff) * 64;
@@ -217,11 +217,11 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 						((row >= spriteFromY) & (row < spriteToY))) {
 					 int spriteCanvasX = pixelPosX - spriteFromX;
 					 int spriteCanvasY = row - spriteFromY;
-					 int spriteLinearPos = spriteCanvasY * 3 + spriteCanvasX >> 3;
+					 int spriteLinearPos = (spriteCanvasY * 3) + (spriteCanvasX >> 3);
 					 int spritePOSinByte = spriteCanvasX & 7;
 					 int spriteByteData = machine.readVIC(spriteStartAddress + spriteLinearPos) & 0xff;
 					 if ((spriteByteData & (0x80 >> spritePOSinByte)) != 0) {
-							int pixelPos_linear = VISIBLE_SCREEN_PIXEL_WIDTH * row + pixelPosX + spritePOSinByte;
+							int pixelPos_linear = VISIBLE_SCREEN_PIXEL_WIDTH * row + pixelPosX /*+ spritePOSinByte*/;
 							pixelPos_linear = pixelPos_linear * 3;
 							pixels[pixelPos_linear + 0] =  255;
 							pixels[pixelPos_linear + 1] =  255;
