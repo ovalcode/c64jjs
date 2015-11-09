@@ -186,27 +186,52 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 		//draw8bits(col << 3, row, charRasterLine, colorCode, mem[0x21]);
 	}
 	
-	protected boolean isPixelTransparent(int dataByte, int posInByte, boolean isMultiColor) {
-		if (isMultiColor) {
-			posInByte = posInByte >> 1;
-			posInByte = posInByte << 1;
-			int dataPair = dataByte & ((128 + 64) >> posInByte);
-			dataPair = dataPair >> (7 - posInByte + 1);
-            return (dataPair == 0);
-		} else {
-			posInByte = posInByte >> 1;
-			int dataPair = dataByte & ((128) >> posInByte);
-			dataPair = dataPair >> (7 - posInByte);
-            return (dataPair == 0);			
-		}
+	protected boolean isSpriteMulticolor(int spriteNumber) {
+		return ((1 << spriteNumber) & mem[28]) == (1 << spriteNumber);
 	}
 	
-	protected RGB getPixelColor(int dataByte, int posInByte, boolean isMultiColor, int spriteNumber) {
-		if (isMultiColor) {
-			posInByte = posInByte >> 1;
-			posInByte = posInByte << 1;
-			int dataPair = dataByte & ((128 + 64) >> posInByte);
-			dataPair = dataPair >> (7 - posInByte + 1);
+	protected int getSpriteDataPair(int spriteNumber, int row, int col, int pixelPosInCol) {
+		boolean xExpanded = ((1 << spriteNumber) & mem[29]) == (1 << spriteNumber);
+		boolean yExpanded = ((1 << spriteNumber) & mem[23]) == (1 << spriteNumber);
+		int spriteFromX = mem[spriteNumber << 1] & 0xff;
+		if (((1 << spriteNumber) & mem[16]) == (1 << spriteNumber))
+			spriteFromX = spriteFromX + 256;
+		int spriteFromY = mem[(spriteNumber << 1) + 1] & 0xff;
+		int pixelPosX = (col << 3) + pixelPosInCol;
+    	 int spriteCanvasX = pixelPosX - spriteFromX;
+		 int spriteCanvasY = row - spriteFromY;
+		if (xExpanded) spriteCanvasX = spriteCanvasX >> 1;
+		if (yExpanded) spriteCanvasY = spriteCanvasY >> 1;
+		
+		 int spriteLinearPos = (spriteCanvasY * 3) + (spriteCanvasX >> 3);
+		 int spritePOSinByte = spriteCanvasX & 7;
+		 int reg18 = mem[0x18] & 0xff;
+		int spritePointerBase = ((reg18 >> 4) << 10);
+		spritePointerBase = spritePointerBase + 1024 - 8;
+
+		 int spriteStartAddress = (machine.readVIC(spritePointerBase + spriteNumber) & 0xff) * 64;
+		 int spriteByteData = machine.readVIC(spriteStartAddress + spriteLinearPos) & 0xff;
+			if (isSpriteMulticolor(spriteNumber)) {
+				spritePOSinByte = spritePOSinByte >> 1;
+		        spritePOSinByte = spritePOSinByte << 1;
+				int dataPair = spriteByteData & ((128 + 64) >> spritePOSinByte);
+				dataPair = dataPair >> (7 - spritePOSinByte + 1);
+	            return dataPair;
+			} else {
+				int dataPair = spriteByteData & ((128) >> spritePOSinByte);
+				dataPair = dataPair >> (7 - spritePOSinByte);
+	            return dataPair;			
+			}
+
+	}
+		
+	protected boolean isPixelTransparent(int spriteNumber, int row, int col, int pixelPosInCol) {
+      return getSpriteDataPair(spriteNumber, row, col, pixelPosInCol) == 0;
+	}
+	
+	protected RGB getPixelColor(int row, int col, int posInByte, int spriteNumber) {
+		if (isSpriteMulticolor(spriteNumber)) {
+			int dataPair = getSpriteDataPair(spriteNumber,row,col,posInByte);
 			if (dataPair == 1) {
 				return COLOR_TABLET[mem[0x25] & 0xf];//0x25
 			} else if (dataPair == 3) {
@@ -217,9 +242,6 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 			}
             
 		} else {
-			posInByte = posInByte >> 1;
-			int dataPair = dataByte & ((128) >> posInByte);
-			dataPair = dataPair >> (7 - posInByte);
             return COLOR_TABLET[mem[0x27 + spriteNumber] & 0xf];//0x27;			
 		}
 	}
@@ -237,47 +259,56 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 	 $D800-$DBE7  55296-56295   1 kB (1000 bytes) of color memory 
 	 */
 	
+	
+	private boolean pixelInSpriteRange(int spriteNumber, int row, int col, int pixelPosInCol) {
+		boolean xExpanded = ((1 << spriteNumber) & mem[29]) == (1 << spriteNumber);
+		boolean yExpanded = ((1 << spriteNumber) & mem[23]) == (1 << spriteNumber);
+		int spriteFromX = mem[spriteNumber << 1] & 0xff;
+		if (((1 << spriteNumber) & mem[16]) == (1 << spriteNumber))
+			spriteFromX = spriteFromX + 256;
+		int spriteFromY = mem[(spriteNumber << 1) + 1] & 0xff;
+		
+		int spriteToX = spriteFromX +  (xExpanded ? 48 : 24);//24;
+		int spriteToY = spriteFromY + (yExpanded ? 42 : 21);
+
+		int pixelPosX = (col << 3) + pixelPosInCol;
+		if (((pixelPosX >= spriteFromX) & (pixelPosX < spriteToX)) &
+		   ((row >= spriteFromY) & (row < spriteToY))) {
+			return true;
+		} else {
+			return false;
+		}
+
+	}
+	
 	public void processSpritesForLine(int row , int col) {
 		int reg18 = mem[0x18] & 0xff;
 		int spritePointerBase = ((reg18 >> 4) << 10);
 		spritePointerBase = spritePointerBase + 1024 - 8;
-		for (int i = 0; i < 8; i++) {
-			if (((1 << i) & mem[21]) == (1 << i)) {
-				int spriteFromX = mem[i << 1] & 0xff;
-				if (((1 << i) & mem[16]) == (1 << i))
-					spriteFromX = spriteFromX + 256;
-				int spriteFromY = mem[(i << 1) + 1] & 0xff;
-				int spriteToX = spriteFromX + 24;
-				int spriteToY = spriteFromY + 21;
-				int spriteStartAddress = (machine.readVIC(spritePointerBase + i) & 0xff) * 64;
-				for (int j = 0; j < 8; j++) {
-					int pixelPosX = (col << 3) + j;
-					if (((pixelPosX >= spriteFromX) & (pixelPosX < spriteToX)) &
-						((row >= spriteFromY) & (row < spriteToY))) {
-					 int spriteCanvasX = pixelPosX - spriteFromX;
-					 int spriteCanvasY = row - spriteFromY;
-					 int spriteLinearPos = (spriteCanvasY * 3) + (spriteCanvasX >> 3);
-					 int spritePOSinByte = spriteCanvasX & 7;
-					 int spriteByteData = machine.readVIC(spriteStartAddress + spriteLinearPos) & 0xff;
-					 if !(isPixelTransparent(spriteByteData, spritePOSinByte, isMultiColor))
-					 if //((spriteByteData & (0x80 >> spritePOSinByte)) != 0) {
+		for (int spriteNumber = 0; spriteNumber < 8; spriteNumber++) {
+			if (((1 << spriteNumber) & mem[21]) == (1 << spriteNumber)) {
+			  for (int currentPixelInCol = 0; currentPixelInCol < 8; currentPixelInCol++) {
+				  if (pixelInSpriteRange(spriteNumber, row, col, currentPixelInCol)) {
+					  if (!isPixelTransparent(spriteNumber, row, col, currentPixelInCol)) {
+						    int pixelPosX = (col << 3) + currentPixelInCol;
 							int pixelPos_linear = VISIBLE_SCREEN_PIXEL_WIDTH * row + pixelPosX /*+ spritePOSinByte*/;
 							pixelPos_linear = pixelPos_linear * 3;
-							pixels[pixelPos_linear + 0] =  255;
-							pixels[pixelPos_linear + 1] =  255;
-							pixels[pixelPos_linear + 2] =  255;
+							RGB pixColor = getPixelColor(row, col, currentPixelInCol, spriteNumber);
+							pixels[pixelPos_linear + 0] =  pixColor.red;
+							pixels[pixelPos_linear + 1] =  pixColor.green;
+							pixels[pixelPos_linear + 2] =  pixColor.blue;
 
-					 }
-					}
-					//24x21
-					
-//					int charPosY = (row -42) >> 3;
-//				int charPosX = col - 6;
-
+					  }
+				  }
+			  }
+			  	
+//if sprite is enabled
+//loop through col pixels and call is transparent -> NB!! if not within sprite range transparent is also true
+//if not transparent get sprite pixel color
 				}
 			}
 		}
-	}
+	
 	
 	private void processRowColumn(int row , int column) {
 		//6 cycles border in line
