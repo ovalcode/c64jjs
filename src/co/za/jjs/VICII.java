@@ -186,6 +186,45 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 		//draw8bits(col << 3, row, charRasterLine, colorCode, mem[0x21]);
 	}
 	
+	protected boolean isPixelTransparent(int dataByte, int posInByte, boolean isMultiColor) {
+		if (isMultiColor) {
+			posInByte = posInByte >> 1;
+			posInByte = posInByte << 1;
+			int dataPair = dataByte & ((128 + 64) >> posInByte);
+			dataPair = dataPair >> (7 - posInByte + 1);
+            return (dataPair == 0);
+		} else {
+			posInByte = posInByte >> 1;
+			int dataPair = dataByte & ((128) >> posInByte);
+			dataPair = dataPair >> (7 - posInByte);
+            return (dataPair == 0);			
+		}
+	}
+	
+	protected RGB getPixelColor(int dataByte, int posInByte, boolean isMultiColor, int spriteNumber) {
+		if (isMultiColor) {
+			posInByte = posInByte >> 1;
+			posInByte = posInByte << 1;
+			int dataPair = dataByte & ((128 + 64) >> posInByte);
+			dataPair = dataPair >> (7 - posInByte + 1);
+			if (dataPair == 1) {
+				return COLOR_TABLET[mem[0x25] & 0xf];//0x25
+			} else if (dataPair == 3) {
+				return COLOR_TABLET[mem[0x26] & 0xf];//0x26
+			} else {
+				//d027 sprite 0
+				return COLOR_TABLET[mem[0x27 + spriteNumber] & 0xf];//0x27
+			}
+            
+		} else {
+			posInByte = posInByte >> 1;
+			int dataPair = dataByte & ((128) >> posInByte);
+			dataPair = dataPair >> (7 - posInByte);
+            return COLOR_TABLET[mem[0x27 + spriteNumber] & 0xf];//0x27;			
+		}
+	}
+
+	
 	//row - 42
 	//col -6
 	//determine character pos
@@ -220,7 +259,8 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 					 int spriteLinearPos = (spriteCanvasY * 3) + (spriteCanvasX >> 3);
 					 int spritePOSinByte = spriteCanvasX & 7;
 					 int spriteByteData = machine.readVIC(spriteStartAddress + spriteLinearPos) & 0xff;
-					 if ((spriteByteData & (0x80 >> spritePOSinByte)) != 0) {
+					 if !(isPixelTransparent(spriteByteData, spritePOSinByte, isMultiColor))
+					 if //((spriteByteData & (0x80 >> spritePOSinByte)) != 0) {
 							int pixelPos_linear = VISIBLE_SCREEN_PIXEL_WIDTH * row + pixelPosX /*+ spritePOSinByte*/;
 							pixelPos_linear = pixelPos_linear * 3;
 							pixels[pixelPos_linear + 0] =  255;
