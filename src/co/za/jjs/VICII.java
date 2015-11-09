@@ -215,7 +215,7 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 				spritePOSinByte = spritePOSinByte >> 1;
 		        spritePOSinByte = spritePOSinByte << 1;
 				int dataPair = spriteByteData & ((128 + 64) >> spritePOSinByte);
-				dataPair = dataPair >> (7 - spritePOSinByte + 1);
+				dataPair = dataPair >> (6 - spritePOSinByte);
 	            return dataPair;
 			} else {
 				int dataPair = spriteByteData & ((128) >> spritePOSinByte);
