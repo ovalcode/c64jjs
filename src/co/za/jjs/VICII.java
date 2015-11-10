@@ -12,9 +12,10 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 	private long lastFrameCycle = 0;
 	private long currentFrameCycle = 0;
 	private static final int BORDER_CYCLES = 3;
-	private static final int BORDER_LINES = 30;
+	private static final int BORDER_LINES = 51;
 	private static final int SCREEN_CYCLES = 40;
 	private static final int SCREEN_LINES = 200;
+	private static final int RASTER_CORRECTION_TERM = 0;
 	private ColorRAM colorRAM;
 	private static final int VISIBLE_SCREEN_PIXEL_WIDTH = (BORDER_CYCLES + SCREEN_CYCLES + BORDER_CYCLES) * 8;
 	private static final int VISIBLE_SCREEN_PIXEL_HEIGHT = (BORDER_LINES + SCREEN_LINES + BORDER_LINES);
@@ -62,13 +63,26 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 		// TODO Auto-generated method stub
 		return 0xd3ff;
 	}
+	
+	private long limitRaster(long rasterLine) {
+		if (rasterLine < 0)
+			rasterLine = 0;
+		return rasterLine;
+	}
 
 	@Override
 	public byte read(int address) {
 		if (address != 53280) System.out.println("VIC READ " + address + " " + mem[address - 0xd000]);
 		address = address & 0xffff;
-		if (address == 0xd012) return (byte)(((currentFrameCycle / 63) + 21) & 0xff);
-		return mem[address - 0xd000];
+		if (address == 0xd012) return (byte)(limitRaster((currentFrameCycle / 63) + RASTER_CORRECTION_TERM /*+ 21*/) & 0xff);
+		int temp =  mem[address - 0xd000];
+		if (address == 0xd011) {
+			temp = temp & 0x7f;
+			long currentLine = limitRaster((currentFrameCycle / 63) + RASTER_CORRECTION_TERM)/*+ 21*/;
+			if (currentLine > 255)
+				temp = temp | 128;
+		}
+		return (byte) temp;
 	}
 	
 	private boolean inScreenRegion(int row, int col) {
@@ -288,12 +302,12 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 		for (int spriteNumber = 0; spriteNumber < 8; spriteNumber++) {
 			if (((1 << spriteNumber) & mem[21]) == (1 << spriteNumber)) {
 			  for (int currentPixelInCol = 0; currentPixelInCol < 8; currentPixelInCol++) {
-				  if (pixelInSpriteRange(spriteNumber, row + 21, col, currentPixelInCol)) {
-					  if (!isPixelTransparent(spriteNumber, row + 21, col, currentPixelInCol)) {
+				  if (pixelInSpriteRange(spriteNumber, (int)limitRaster(row + RASTER_CORRECTION_TERM)/* + 21*/, col, currentPixelInCol)) {
+					  if (!isPixelTransparent(spriteNumber, (int)limitRaster(row + RASTER_CORRECTION_TERM)/*+ 21*/, col, currentPixelInCol)) {
 						    int pixelPosX = (col << 3) + currentPixelInCol;
 							int pixelPos_linear = VISIBLE_SCREEN_PIXEL_WIDTH * row + pixelPosX /*+ spritePOSinByte*/;
 							pixelPos_linear = pixelPos_linear * 3;
-							RGB pixColor = getPixelColor(row+21, col, currentPixelInCol, spriteNumber);
+							RGB pixColor = getPixelColor((int)limitRaster(row + RASTER_CORRECTION_TERM)/*+21*/, col, currentPixelInCol, spriteNumber);
 							pixels[pixelPos_linear + 0] =  pixColor.red;
 							pixels[pixelPos_linear + 1] =  pixColor.green;
 							pixels[pixelPos_linear + 2] =  pixColor.blue;
@@ -349,6 +363,17 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 
 	}
 	
+	private boolean rasterlineReached(int currentLine) {
+		//if ((((row + 21) & 0xff) == (mem[18] & 0xff))
+		int destinatedLine = mem[18] & 0xff;
+		if ((mem[0x11] & 128) != 0) {
+			destinatedLine = destinatedLine + 256;
+		}
+		
+		return (currentLine == destinatedLine);
+		
+	}
+	
 	public int[] getFrame() {
 		long beginCycle = 0;
 		long endCycle = 0;
@@ -361,7 +386,7 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 				int row = (int) (currentFrameCycle / 63);
 				int col = (int) (currentFrameCycle - row * 63);
 				if ((mem[26] & 1) == 1) {
-					if ((((row + 21) & 0xff) == (mem[18] & 0xff)) & (col == 0))
+					if (rasterlineReached((int)limitRaster(row + RASTER_CORRECTION_TERM) /*+ 21*/) & (col == 0))
 						mem[25] &= 0xfe;
 				}
 				processRowColumn(row, col);
