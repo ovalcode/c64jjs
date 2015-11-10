@@ -11,8 +11,8 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 	private Machine machine;
 	private long lastFrameCycle = 0;
 	private long currentFrameCycle = 0;
-	private static final int BORDER_CYCLES = 6;
-	private static final int BORDER_LINES = 42;
+	private static final int BORDER_CYCLES = 3;
+	private static final int BORDER_LINES = 30;
 	private static final int SCREEN_CYCLES = 40;
 	private static final int SCREEN_LINES = 200;
 	private ColorRAM colorRAM;
@@ -161,17 +161,17 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 		int reg18 = mem[0x18] & 0xff;
 		int screenBase = ((reg18 >> 4) << 10);
 		int graphicsBase = ((reg18 & 0xe) << 10);
-		int charPosY = (row -42) >> 3;
-		int charPosX = col - 6;
+		int charPosY = (row - BORDER_LINES) >> 3;
+		int charPosX = col - BORDER_CYCLES;
 		int charPosLinear = charPosY * 40 + charPosX;
 		int charCode = machine.readVIC(charPosLinear + screenBase) & 0xff;
 		int colorCode = colorRAM.read(charPosLinear + 0xd800) & 0xf;
 		//if BMM get from b
 		int charRasterLine;
 		if ((mem[0x11] & 32) == 32)
-			charRasterLine = machine.readVIC(((charPosLinear << 3) + ((row - 42) & 7) + graphicsBase));
+			charRasterLine = machine.readVIC(((charPosLinear << 3) + ((row - BORDER_LINES) & 7) + graphicsBase));
 		else 
-		    charRasterLine = machine.readVIC((charCode << 3) + ((row -42) & 7) + graphicsBase);
+		    charRasterLine = machine.readVIC((charCode << 3) + ((row -BORDER_LINES) & 7) + graphicsBase);
 		
 		if (isMulticolor(colorCode)) {
 			int[] colorTablet = ((mem[0x11] & 32) == 32) ? getMultiColorPalleteHighRes(charCode, colorCode) : getMultiColorPalleteTextMode(charCode, colorCode);

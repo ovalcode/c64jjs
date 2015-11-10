@@ -46,7 +46,8 @@ public class Board extends JPanel
     private void loadImage() {
 
     //star = ImageIO.read(new File("/home/johan/images.jpeg"));
-	star = new BufferedImage(416, 284, BufferedImage.TYPE_INT_RGB);
+	//star = new BufferedImage(416, 284, BufferedImage.TYPE_INT_RGB);
+    	star = new BufferedImage(368, 260, BufferedImage.TYPE_INT_RGB);
     }
 
     private void initBoard() {
