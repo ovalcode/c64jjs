@@ -67,7 +67,7 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 	public byte read(int address) {
 		if (address != 53280) System.out.println("VIC READ " + address + " " + mem[address - 0xd000]);
 		address = address & 0xffff;
-		if (address == 0xd012) return (byte)(((currentFrameCycle / 63) + 16) & 0xff);
+		if (address == 0xd012) return (byte)(((currentFrameCycle / 63) + 21) & 0xff);
 		return mem[address - 0xd000];
 	}
 	
@@ -361,7 +361,7 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 				int row = (int) (currentFrameCycle / 63);
 				int col = (int) (currentFrameCycle - row * 63);
 				if ((mem[26] & 1) == 1) {
-					if ((((row + 16) & 0xff) == (mem[18] & 0xff)) & (col == 0))
+					if ((((row + 21) & 0xff) == (mem[18] & 0xff)) & (col == 0))
 						mem[25] &= 0xfe;
 				}
 				processRowColumn(row, col);
