@@ -288,12 +288,12 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 		for (int spriteNumber = 0; spriteNumber < 8; spriteNumber++) {
 			if (((1 << spriteNumber) & mem[21]) == (1 << spriteNumber)) {
 			  for (int currentPixelInCol = 0; currentPixelInCol < 8; currentPixelInCol++) {
-				  if (pixelInSpriteRange(spriteNumber, row, col, currentPixelInCol)) {
-					  if (!isPixelTransparent(spriteNumber, row, col, currentPixelInCol)) {
+				  if (pixelInSpriteRange(spriteNumber, row + 21, col, currentPixelInCol)) {
+					  if (!isPixelTransparent(spriteNumber, row + 21, col, currentPixelInCol)) {
 						    int pixelPosX = (col << 3) + currentPixelInCol;
 							int pixelPos_linear = VISIBLE_SCREEN_PIXEL_WIDTH * row + pixelPosX /*+ spritePOSinByte*/;
 							pixelPos_linear = pixelPos_linear * 3;
-							RGB pixColor = getPixelColor(row, col, currentPixelInCol, spriteNumber);
+							RGB pixColor = getPixelColor(row+21, col, currentPixelInCol, spriteNumber);
 							pixels[pixelPos_linear + 0] =  pixColor.red;
 							pixels[pixelPos_linear + 1] =  pixColor.green;
 							pixels[pixelPos_linear + 2] =  pixColor.blue;
