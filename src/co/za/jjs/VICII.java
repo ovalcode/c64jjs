@@ -299,7 +299,7 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 		int reg18 = mem[0x18] & 0xff;
 		int spritePointerBase = ((reg18 >> 4) << 10);
 		spritePointerBase = spritePointerBase + 1024 - 8;
-		for (int spriteNumber = 0; spriteNumber < 8; spriteNumber++) {
+		for (int spriteNumber = 7; spriteNumber >= 0; spriteNumber--) {
 			if (((1 << spriteNumber) & mem[21]) == (1 << spriteNumber)) {
 			  for (int currentPixelInCol = 0; currentPixelInCol < 8; currentPixelInCol++) {
 				  if (pixelInSpriteRange(spriteNumber, (int)limitRaster(row + RASTER_CORRECTION_TERM)/* + 21*/, col, currentPixelInCol)) {
