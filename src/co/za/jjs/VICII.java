@@ -340,6 +340,9 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 			return;
 		}
 		
+		//for each dot
+		// for each sprite		
+		//   
 		drawCharacterLine(row, column);
 		processSpritesForLine(row, column);
 		//draw spritesfor line -> row pixel, col = 8bits
@@ -425,6 +428,25 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 		return false;
 	}
 	
+
+	private static class RasterByte {
+		  private int transparancyInfo;
+		  private RGB[] pixelColors;
+		  
+		  public RasterByte(int transparancyInfo, RGB[] pixelColors) {
+			  this.transparancyInfo = transparancyInfo;
+			  this.pixelColors = pixelColors;
+		  }
+		  
+		  public int getTransparencyInfo() {
+			  return transparancyInfo;
+		  }
+		  
+		  public RGB[] getColors() {
+			  return pixelColors;
+		  }
+		
+	}
 	private static class RGB {
 		private int red;
 		private int blue;
