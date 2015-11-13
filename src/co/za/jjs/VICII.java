@@ -296,7 +296,7 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 
 	}
 	
-	public void processSpritesForLine(int row , int col) {
+	public RasterByte[] processSpritesForLine(int row , int col) {
 		int reg18 = mem[0x18] & 0xff;
 		int spritePointerBase = ((reg18 >> 4) << 10);
 		spritePointerBase = spritePointerBase + 1024 - 8;
@@ -305,13 +305,7 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 			  for (int currentPixelInCol = 0; currentPixelInCol < 8; currentPixelInCol++) {
 				  if (pixelInSpriteRange(spriteNumber, (int)limitRaster(row + RASTER_CORRECTION_TERM)/* + 21*/, col, currentPixelInCol)) {
 					  if (!isPixelTransparent(spriteNumber, (int)limitRaster(row + RASTER_CORRECTION_TERM)/*+ 21*/, col, currentPixelInCol)) {
-						    int pixelPosX = (col << 3) + currentPixelInCol;
-							int pixelPos_linear = VISIBLE_SCREEN_PIXEL_WIDTH * row + pixelPosX /*+ spritePOSinByte*/;
-							pixelPos_linear = pixelPos_linear * 3;
 							RGB pixColor = getPixelColor((int)limitRaster(row + RASTER_CORRECTION_TERM)/*+21*/, col, currentPixelInCol, spriteNumber);
-							pixels[pixelPos_linear + 0] =  pixColor.red;
-							pixels[pixelPos_linear + 1] =  pixColor.green;
-							pixels[pixelPos_linear + 2] =  pixColor.blue;
 
 					  }
 				  }
