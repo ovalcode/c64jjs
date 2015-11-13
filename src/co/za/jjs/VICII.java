@@ -345,8 +345,15 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 		//for each dot
 		// for each sprite		
 		//   
-		drawCharacterLine(row, column);
-		processSpritesForLine(row, column);
+		RasterByte screenData = drawCharacterLine(row, column);
+		RasterByte[] spriteData = processSpritesForLine(row, column);
+		for (int currentPixel = 0; currentPixel < 8; currentPixel++) {
+			for (int spriteNumber = 7; spriteNumber >= 0; spriteNumber--) {
+				//if sprite has priority draw sprite data then screen data
+				//else reverse order
+				//
+			}
+		}
 		//draw spritesfor line -> row pixel, col = 8bits
 		//for each sprite if enabled
 		//  -> 
