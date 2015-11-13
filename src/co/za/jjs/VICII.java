@@ -300,13 +300,18 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 		int reg18 = mem[0x18] & 0xff;
 		int spritePointerBase = ((reg18 >> 4) << 10);
 		spritePointerBase = spritePointerBase + 1024 - 8;
+		RasterByte[] rasterByteArray = new RasterByte[8];
 		for (int spriteNumber = 7; spriteNumber >= 0; spriteNumber--) {
+			int transparency = 0;
+			RGB[] colors = new RGB[8];
 			if (((1 << spriteNumber) & mem[21]) == (1 << spriteNumber)) {
 			  for (int currentPixelInCol = 0; currentPixelInCol < 8; currentPixelInCol++) {
+				  transparency = transparency << 1;
 				  if (pixelInSpriteRange(spriteNumber, (int)limitRaster(row + RASTER_CORRECTION_TERM)/* + 21*/, col, currentPixelInCol)) {
 					  if (!isPixelTransparent(spriteNumber, (int)limitRaster(row + RASTER_CORRECTION_TERM)/*+ 21*/, col, currentPixelInCol)) {
+						    transparency = transparency | 1;
 							RGB pixColor = getPixelColor((int)limitRaster(row + RASTER_CORRECTION_TERM)/*+21*/, col, currentPixelInCol, spriteNumber);
-
+                            colors[currentPixelInCol] = pixColor;
 					  }
 				  }
 			  }
@@ -315,7 +320,9 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 //loop through col pixels and call is transparent -> NB!! if not within sprite range transparent is also true
 //if not transparent get sprite pixel color
 				}
+			rasterByteArray[spriteNumber] = new RasterByte(transparency, colors);
 			}
+		return rasterByteArray;
 		}
 	
 	
