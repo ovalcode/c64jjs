@@ -1,5 +1,6 @@
 package co.za.jjs;
 
+import java.awt.image.Raster;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -102,22 +103,23 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 		}*/
 	}
 	
-	private void draw8bits(int posX, int posY, int bits, int bitcolor, int background) {
+	private RasterByte draw8bits(int posX, int posY, int bits, int bitcolor, int background) {
+		int transparencyInfo = 0;
+		RGB[] colors = new RGB[8]; 
 		for (int i = 0; i < 8; i++) {
 			bits = bits << 1;
 			boolean setPixel = (bits & 256) != 0;
-			int pixelPos_linear = VISIBLE_SCREEN_PIXEL_WIDTH * posY + posX + i;
-			pixelPos_linear = pixelPos_linear * 3;
 			int color;
 			if (setPixel) {
 				color = bitcolor & 0xf;
 			} else {
 				color = background & 0xf;
 			}
-			pixels[pixelPos_linear + 0] =  COLOR_TABLET[color].red;
-			pixels[pixelPos_linear + 1] =  COLOR_TABLET[color].green;
-			pixels[pixelPos_linear + 2] =  COLOR_TABLET[color].blue;
-		}		
+			transparencyInfo = transparencyInfo << 1;
+			transparencyInfo = transparencyInfo | (setPixel ? 1 : 0);
+			colors[i] = COLOR_TABLET[color];
+		}
+		return new RasterByte(transparencyInfo, colors);
 	}
 	
 	private int[] getMultiColorPalleteHighRes(int screenChar, int colorByte) {
