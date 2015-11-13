@@ -1131,7 +1131,7 @@ ASL  Shift Left One Bit (Memory or Accumulator)
 		             absolute      ROR oper      6E    3     6
 		             absolute,X    ROR oper,X    7E    3     7 */
 
-                              case 0x6A: temp = state.getA() | (state.getCarryFlag() ? 256 : 0) ;
+                              case 0x6A: temp = (state.getA() & 0xff) | (state.getCarryFlag() ? 256 : 0) ;
                                          state.setCarryFlag((temp & 1) != 0);
                                          temp = temp >> 1;                                         
                                          state.setA((byte) (temp & 0xff));
