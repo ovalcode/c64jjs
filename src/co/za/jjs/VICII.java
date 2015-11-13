@@ -141,22 +141,21 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 	}
 
 	
-	private void draw8bitsMulticolor (int posX, int posY, int bits, int[] palette) {
+	private RasterByte draw8bitsMulticolor (int posX, int posY, int bits, int[] palette) {
+		int transparencyInfo = 0;
+		RGB[] colors = new RGB[8]; 
+
 		for (int i = 0; i < 4; i++) {
 			bits = bits << 2;
 			int palletteEntry = (bits & (256 + 512)) >> 8;
-			int pixelPos_linear = VISIBLE_SCREEN_PIXEL_WIDTH * posY + posX + i * 2;
-			pixelPos_linear = pixelPos_linear * 3;
-			int color;
-			color = palette[palletteEntry];
-			pixels[pixelPos_linear + 0] =  COLOR_TABLET[color].red;
-			pixels[pixelPos_linear + 1] =  COLOR_TABLET[color].green;
-			pixels[pixelPos_linear + 2] =  COLOR_TABLET[color].blue;
-			pixels[pixelPos_linear + 3] =  COLOR_TABLET[color].red;
-			pixels[pixelPos_linear + 4] =  COLOR_TABLET[color].green;
-			pixels[pixelPos_linear + 5] =  COLOR_TABLET[color].blue;
-			
-		}		
+			transparencyInfo = transparencyInfo << 2;
+			if (palletteEntry != 0) {
+				transparencyInfo = transparencyInfo | 3;
+			}
+			colors[(i <<1) + 0] = COLOR_TABLET[palette[palletteEntry]];
+			colors[(i <<1) + 1] = COLOR_TABLET[palette[palletteEntry]];			
+		}
+		return new RasterByte(transparencyInfo, colors);
 	}
 	
 	public boolean isMulticolor(int colorCode) {
@@ -170,7 +169,7 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 	}
 
 	
-	public void drawCharacterLine(int row, int col) {
+	public RasterByte drawCharacterLine(int row, int col) {
 		//d016 bit 4 - multicolor mode
 		//d011 bit 5 - bit map mode
 		//24| $d018 |VM13|VM12|VM11|VM10|CB13|CB12|CB11|  - | Memory pointers
@@ -191,9 +190,9 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 		
 		if (isMulticolor(colorCode)) {
 			int[] colorTablet = ((mem[0x11] & 32) == 32) ? getMultiColorPalleteHighRes(charCode, colorCode) : getMultiColorPalleteTextMode(charCode, colorCode);
-			draw8bitsMulticolor(col << 3, row, charRasterLine, colorTablet);
+			return draw8bitsMulticolor(col << 3, row, charRasterLine, colorTablet);
 		} else {
-			draw8bits(col << 3, row, charRasterLine, colorCode, mem[0x21]);
+			return draw8bits(col << 3, row, charRasterLine, colorCode, mem[0x21]);
 		}
 		//if multicolor and charcode is more than 7 then multicolor
 		//else if multicolor then high res with color code
