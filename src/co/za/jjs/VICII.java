@@ -72,7 +72,7 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 
 	@Override
 	public byte read(int address) {
-		if (address != 53280) System.out.println("VIC READ " + address + " " + mem[address - 0xd000]);
+		//if (address != 53280) System.out.println("VIC READ " + address + " " + mem[address - 0xd000]);
 		address = address & 0xffff;
 		if (address == 0xd012) return (byte)(limitRaster((currentFrameCycle / 63) + RASTER_CORRECTION_TERM /*+ 21*/) & 0xff);
 		int temp =  mem[address - 0xd000];
@@ -400,7 +400,7 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 	@Override
 	public void write(int address, byte num) {
 		address = address & 0xffff;
-		if (address != 53280) System.out.println("VIC WRITE " + address + " " + num);
+		//if (address != 53280) System.out.println("VIC WRITE " + address + " " + num);
 		if (address == 0xd021)
 			System.out.println(num);
 		mem[address - 0xd000] = num;

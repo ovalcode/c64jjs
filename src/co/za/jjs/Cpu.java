@@ -280,7 +280,7 @@ case 0x40:  temp =  bus.read(state.pop());
 		if ((state.getPc() & 0xffff) == 0x3c2)
 		{
 			int high = 0;
-			System.out.println("Checksum: " + state.getA());
+			//System.out.println("Checksum: " + state.getA());
 			//System.out.println(bus.read(0xb1));
 			//int high = bus.read(0xdc07) & 0xff;
 			//int low = bus.read(0xdc06) & 0xff;
