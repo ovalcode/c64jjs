@@ -92,15 +92,14 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 	}
 	
 	private void fillBorder(int row, int col) {
-		draw8bits(col << 3, row, 0, 0, mem[0x20] & 0xf);
-		/*int pixelColPos = col * 8;
-		for (int i = 0; i < 8; i++) {
-			int pixelPos_linear = VISIBLE_SCREEN_PIXEL_WIDTH * row + pixelColPos + i;
-			pixelPos_linear = pixelPos_linear * 3;
+		int pixelColPos = col << 3;
+		int pixelPos_linear = VISIBLE_SCREEN_PIXEL_WIDTH * row + pixelColPos;
+		for (int i = 0; i < 8; i++) {			
 			pixels[pixelPos_linear + 0] =  COLOR_TABLET[mem[0x20] & 0xf].red;
 			pixels[pixelPos_linear + 1] =  COLOR_TABLET[mem[0x20] & 0xf].green;
 			pixels[pixelPos_linear + 2] =  COLOR_TABLET[mem[0x20] & 0xf].blue;
-		}*/
+			pixelPos_linear = pixelPos_linear + 3;
+		}
 	}
 	
 	private RasterByte draw8bits(int posX, int posY, int bits, int bitcolor, int background) {
@@ -367,8 +366,10 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 		RasterByte[] spriteData = processSpritesForLine(row, column);
 		int priority = mem[0x1b] & 0xff;
 		//for (int currentPixel = 0; currentPixel < 8; currentPixel++) {
+		boolean spriteDataWritten = false;
 			for (int spriteNumber = 7; spriteNumber >= 0; spriteNumber--) {
 				if (spriteData[spriteNumber].transparancyInfo != 0) {
+					spriteDataWritten = true;
 					if ((priority & (1 << spriteNumber)) != 0) {
 						colorsToWrite = writeColors(spriteData[spriteNumber], screenData, colorsToWrite);
 					} else {
@@ -379,7 +380,7 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 				//else reverse order
 				//d01b
 			}
-			if ((mem[0x15] & 0xff) == 0) {
+			if (!spriteDataWritten) {
 				colorsToWrite = screenData.pixelColors;
 			}
 			int pixelPos_linear = VISIBLE_SCREEN_PIXEL_WIDTH * row + (column << 3);
