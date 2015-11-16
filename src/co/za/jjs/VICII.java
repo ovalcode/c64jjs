@@ -325,6 +325,20 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 		return rasterByteArray;
 		}
 	
+	private RGB[] writeColors(RasterByte background, RasterByte forground, RGB[] existingColors) {
+		for (int currentPixel = 0; currentPixel < 8; currentPixel++) {
+			if ((background.transparancyInfo & (128 >> currentPixel)) != 0) {
+				existingColors[currentPixel] = background.pixelColors[currentPixel];
+			}
+		}
+		for (int currentPixel = 0; currentPixel < 8; currentPixel++) {
+			if ((forground.transparancyInfo & (128 >> currentPixel)) != 0) {
+				existingColors[currentPixel] = forground.pixelColors[currentPixel];
+			}
+		}
+		return existingColors;
+	}
+	
 	
 	private void processRowColumn(int row , int column) {
 		//6 cycles border in line
@@ -345,15 +359,38 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 		//for each dot
 		// for each sprite		
 		//   
+		RGB[] colorsToWrite = new RGB[8];
+		for (int i = 0; i < 8; i++) {
+			colorsToWrite[i] = COLOR_TABLET[mem[0x21] & 0xff];
+		}
 		RasterByte screenData = drawCharacterLine(row, column);
 		RasterByte[] spriteData = processSpritesForLine(row, column);
-		for (int currentPixel = 0; currentPixel < 8; currentPixel++) {
+		int priority = mem[0x1b] & 0xff;
+		//for (int currentPixel = 0; currentPixel < 8; currentPixel++) {
 			for (int spriteNumber = 7; spriteNumber >= 0; spriteNumber--) {
+				if (spriteData[spriteNumber].transparancyInfo != 0) {
+					if ((priority & (1 << spriteNumber)) != 0) {
+						colorsToWrite = writeColors(spriteData[spriteNumber], screenData, colorsToWrite);
+					} else {
+						colorsToWrite = writeColors(screenData, spriteData[spriteNumber], colorsToWrite);
+					}
+				}
 				//if sprite has priority draw sprite data then screen data
 				//else reverse order
-				//
+				//d01b
 			}
-		}
+			if ((mem[0x15] & 0xff) == 0) {
+				colorsToWrite = screenData.pixelColors;
+			}
+			int pixelPos_linear = VISIBLE_SCREEN_PIXEL_WIDTH * row + (column << 3);
+			pixelPos_linear = pixelPos_linear * 3;
+			for (int i = 0; i < 8; i++) {
+				pixels[pixelPos_linear + 0] = colorsToWrite[i].red;
+				pixels[pixelPos_linear + 1] = colorsToWrite[i].green;
+				pixels[pixelPos_linear + 2] = colorsToWrite[i].blue;
+				pixelPos_linear = pixelPos_linear + 3;
+			}
+		//}
 		//draw spritesfor line -> row pixel, col = 8bits
 		//for each sprite if enabled
 		//  -> 
