@@ -93,7 +93,7 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 	
 	private void fillBorder(int row, int col) {
 		int pixelColPos = col << 3;
-		int pixelPos_linear = VISIBLE_SCREEN_PIXEL_WIDTH * row + pixelColPos;
+		int pixelPos_linear = (VISIBLE_SCREEN_PIXEL_WIDTH * row + pixelColPos) *3;
 		for (int i = 0; i < 8; i++) {			
 			pixels[pixelPos_linear + 0] =  COLOR_TABLET[mem[0x20] & 0xf].red;
 			pixels[pixelPos_linear + 1] =  COLOR_TABLET[mem[0x20] & 0xf].green;
