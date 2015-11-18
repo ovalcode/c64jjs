@@ -148,6 +148,11 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 			bits = bits << 2;
 			int palletteEntry = (bits & (256 + 512)) >> 8;
 			transparencyInfo = transparencyInfo << 2;
+			/*if ((mem[0x11] & 32) == 32)
+				charRasterLine = machine.readVIC(((charPosLinear << 3) + ((row - BORDER_LINES) & 7) + graphicsBase));
+			else 
+			    charRasterLine = machine.readVIC((charCode << 3) + ((row -BORDER_LINES) & 7) + graphicsBase);*/
+
 			if (palletteEntry != 0) {
 				transparencyInfo = transparencyInfo | 3;
 			}
