@@ -152,9 +152,14 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 				charRasterLine = machine.readVIC(((charPosLinear << 3) + ((row - BORDER_LINES) & 7) + graphicsBase));
 			else 
 			    charRasterLine = machine.readVIC((charCode << 3) + ((row -BORDER_LINES) & 7) + graphicsBase);*/
-
-			if (palletteEntry != 0) {
-				transparencyInfo = transparencyInfo | 3;
+			if ((mem[0x11] & 32) != 32) {
+				if ((palletteEntry != 0) & (palletteEntry != 1)) {
+					transparencyInfo = transparencyInfo | 3;
+				}				
+			} else {
+				if (palletteEntry != 0) {
+					transparencyInfo = transparencyInfo | 3;
+				}				
 			}
 			colors[(i <<1) + 0] = COLOR_TABLET[palette[palletteEntry]];
 			colors[(i <<1) + 1] = COLOR_TABLET[palette[palletteEntry]];			
@@ -329,15 +334,16 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 		return rasterByteArray;
 		}
 	
-	private RGB[] writeColors(RasterByte background, RasterByte forground, RGB[] existingColors) {
-		for (int currentPixel = 0; currentPixel < 8; currentPixel++) {
-			if ((background.transparancyInfo & (128 >> currentPixel)) != 0) {
-				existingColors[currentPixel] = background.pixelColors[currentPixel];
-			}
-		}
+	private RGB[] writeColors(RasterByte spriteData, RasterByte screenData, int priority, RGB[] existingColors) {
+		RasterByte background = (priority == 0) ? screenData : spriteData;
+		RasterByte forground = (priority == 0) ? spriteData : screenData;
 		for (int currentPixel = 0; currentPixel < 8; currentPixel++) {
 			if ((forground.transparancyInfo & (128 >> currentPixel)) != 0) {
 				existingColors[currentPixel] = forground.pixelColors[currentPixel];
+			} else if ((background.transparancyInfo & (128 >> currentPixel)) != 0) {
+				existingColors[currentPixel] = background.pixelColors[currentPixel];
+			} else {
+				existingColors[currentPixel] = screenData.pixelColors[currentPixel];
 			}
 		}
 		return existingColors;
@@ -375,11 +381,8 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 			for (int spriteNumber = 7; spriteNumber >= 0; spriteNumber--) {
 				if (spriteData[spriteNumber].transparancyInfo != 0) {
 					spriteDataWritten = true;
-					if ((priority & (1 << spriteNumber)) != 0) {
-						colorsToWrite = writeColors(spriteData[spriteNumber], screenData, colorsToWrite);
-					} else {
-						colorsToWrite = writeColors(screenData, spriteData[spriteNumber], colorsToWrite);
-					}
+					int currentPriority = ((priority & (1 << spriteNumber)) != 0) ? 1 : 0;
+					colorsToWrite = writeColors(spriteData[spriteNumber], screenData, currentPriority, colorsToWrite);
 				}
 				//if sprite has priority draw sprite data then screen data
 				//else reverse order
