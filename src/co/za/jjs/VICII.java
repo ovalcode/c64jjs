@@ -401,7 +401,7 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 		ArrayList<Integer> backgroundSprites = new ArrayList<Integer>(); 
 		ArrayList<Integer> forgroundSprites = new ArrayList<Integer>();
 		boolean spriteDataWritten = false;
-		for (int spriteNumber = 0; spriteNumber < 7; spriteNumber++) {
+		for (int spriteNumber = 0; spriteNumber < 8; spriteNumber++) {
 			if (spriteData[spriteNumber].transparancyInfo != 0) {
 				spriteDataWritten = true;
 				int currentPriority = ((priority & (1 << spriteNumber)) != 0) ? 1 : 0;
