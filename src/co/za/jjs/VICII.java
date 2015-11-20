@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 
@@ -334,20 +335,40 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 		return rasterByteArray;
 		}
 	
-	private RGB[] writeColors(RasterByte spriteData, RasterByte screenData, int priority, RGB[] existingColors) {
-		RasterByte background = (priority == 0) ? screenData : spriteData;
-		RasterByte forground = (priority == 0) ? spriteData : screenData;
+	private RGB[] mergeColorsWithForeground(RGB[] mergedSpriteBGColors, int mergedSpriteTransparency, RasterByte screenData) {
+		RGB[] newColors = new RGB[8];
 		for (int currentPixel = 0; currentPixel < 8; currentPixel++) {
-			if ((forground.transparancyInfo & (128 >> currentPixel)) != 0) {
-				existingColors[currentPixel] = forground.pixelColors[currentPixel];
-			} else if ((background.transparancyInfo & (128 >> currentPixel)) != 0) {
-				existingColors[currentPixel] = background.pixelColors[currentPixel];
+			if ((screenData.transparancyInfo & (128 >> currentPixel)) != 0) {
+				newColors[currentPixel] = screenData.pixelColors[currentPixel];
+			} else if ((mergedSpriteTransparency & (128 >> currentPixel)) != 0) {
+				newColors[currentPixel] = mergedSpriteBGColors[currentPixel];
 			} else {
-				existingColors[currentPixel] = screenData.pixelColors[currentPixel];
+				newColors[currentPixel] = screenData.pixelColors[currentPixel];
 			}
+		}
+		return newColors;
+	}
+	
+	private RGB[] mergeForegroundSprite(RasterByte SpriteData, RGB[] currentColors) {
+		RGB[] newColors = new RGB[8];
+		for (int currentPixel = 0; currentPixel < 8; currentPixel++) {
+            if ((SpriteData.getTransparencyInfo() & (128 >> currentPixel)) != 0) {
+				newColors[currentPixel] = SpriteData.pixelColors[currentPixel];
+			} else {
+				newColors[currentPixel] = currentColors[currentPixel];
+			}
+		}
+		return newColors;
+	}
+
+	
+	private RGB[] writeColors(RasterByte screenData, RGB[] existingColors) {
+		for (int currentPixel = 0; currentPixel < 8; currentPixel++) {
+				existingColors[currentPixel] = screenData.pixelColors[currentPixel];
 		}
 		return existingColors;
 	}
+
 	
 	
 	private void processRowColumn(int row , int column) {
@@ -377,17 +398,37 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 		RasterByte[] spriteData = processSpritesForLine(row, column);
 		int priority = mem[0x1b] & 0xff;
 		//for (int currentPixel = 0; currentPixel < 8; currentPixel++) {
+		ArrayList<Integer> backgroundSprites = new ArrayList<Integer>(); 
+		ArrayList<Integer> forgroundSprites = new ArrayList<Integer>();
 		boolean spriteDataWritten = false;
-			for (int spriteNumber = 7; spriteNumber >= 0; spriteNumber--) {
-				if (spriteData[spriteNumber].transparancyInfo != 0) {
-					spriteDataWritten = true;
-					int currentPriority = ((priority & (1 << spriteNumber)) != 0) ? 1 : 0;
-					colorsToWrite = writeColors(spriteData[spriteNumber], screenData, currentPriority, colorsToWrite);
-				}
-				//if sprite has priority draw sprite data then screen data
-				//else reverse order
-				//d01b
+		for (int spriteNumber = 0; spriteNumber < 7; spriteNumber++) {
+			if (spriteData[spriteNumber].transparancyInfo != 0) {
+				spriteDataWritten = true;
+				int currentPriority = ((priority & (1 << spriteNumber)) != 0) ? 1 : 0;
+				if (currentPriority == 1) {
+					backgroundSprites.add(spriteNumber);
+				} else {
+					forgroundSprites.add(spriteNumber);
+				}	
 			}
+		}
+			
+		int tranparencyAcc = 0;
+			
+		for (int backgroundNum = 0; backgroundNum < backgroundSprites.size(); backgroundNum++) {
+			int currentSprite = backgroundSprites.get(backgroundSprites.size() - backgroundNum - 1);
+			colorsToWrite = mergeForegroundSprite(spriteData[currentSprite], colorsToWrite);
+			tranparencyAcc = tranparencyAcc | (spriteData[currentSprite].getTransparencyInfo());
+			spriteDataWritten = true;
+		}
+		
+		colorsToWrite = mergeColorsWithForeground(colorsToWrite, tranparencyAcc, screenData);
+		for (int foregroundNum = 0; foregroundNum < forgroundSprites.size(); foregroundNum++) {
+			int currentSprite = forgroundSprites.get(forgroundSprites.size() - foregroundNum -1);
+			spriteDataWritten = true;
+			colorsToWrite = mergeForegroundSprite(spriteData[currentSprite], colorsToWrite);			
+		}
+
 			if (!spriteDataWritten) {
 				colorsToWrite = screenData.pixelColors;
 			}
@@ -399,6 +440,7 @@ public class VICII implements Alarm, MemoryRegion, InterruptInterface{
 				pixels[pixelPos_linear + 2] = colorsToWrite[i].blue;
 				pixelPos_linear = pixelPos_linear + 3;
 			}
+		
 		//}
 		//draw spritesfor line -> row pixel, col = 8bits
 		//for each sprite if enabled
